@@ -11,14 +11,15 @@
    python data_preparation.py
    ```
 
-3. Run the main script to extract features, perform feature selection, and train the classifier:
-   ```
-   python main.py
-   ```
-* Note: The full pipeline may take a while to run, so you may want to use the fast_run.py script to run a faster version of the pipeline.  
+3. The fast_run.py script runs a fast version of the pipeline. It extracts features, performs feature selection, and trains the classifier. 
    ```
    python3 fast_run.py --skip-data-prep
    ``` 
+   
+I have not tested the main script yet, this is for the future:
+   ```
+   python main.py
+   ```
 
 This project replicates the approach described in the research paper "Classification of Dog Breeds Using Convolutional Neural Network Models and Support Vector Machine" by Ying Cui, Bixia Tang, Gangao Wu, Lun Li, Xin Zhang, Zhenglin Du, and Wenming Zhao.
 
