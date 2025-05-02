@@ -59,8 +59,46 @@ class FeatureExtractor:
             model = torch.nn.Sequential(*list(model.children())[:-1])  # Remove the classifier
         
         elif self.model_name == "inception_v3":
-            model = models.inception_v3(weights=models.Inception_V3_Weights.IMAGENET1K_V1, aux_logits=False)
-            model = torch.nn.Sequential(*list(model.children())[:-1])  # Remove the last FC layer
+            # Special handling for Inception v3
+            model = models.inception_v3(weights=models.Inception_V3_Weights.IMAGENET1K_V1, transform_input=True)
+            # We need to modify the model to only use it for feature extraction
+            # Set aux_logits to False to avoid the auxiliary output
+            model.aux_logits = False
+            # Remove the final fully connected layer
+            model.fc = torch.nn.Identity()
+            # Create a wrapper to get the output before the final classifier
+            class InceptionFeatureExtractor(torch.nn.Module):
+                def __init__(self, inception_model):
+                    super(InceptionFeatureExtractor, self).__init__()
+                    self.model = inception_model
+                
+                def forward(self, x):
+                    # Forward pass through the model but get features before classification
+                    x = self.model.Conv2d_1a_3x3(x)
+                    x = self.model.Conv2d_2a_3x3(x)
+                    x = self.model.Conv2d_2b_3x3(x)
+                    x = self.model.maxpool1(x)
+                    x = self.model.Conv2d_3b_1x1(x)
+                    x = self.model.Conv2d_4a_3x3(x)
+                    x = self.model.maxpool2(x)
+                    x = self.model.Mixed_5b(x)
+                    x = self.model.Mixed_5c(x)
+                    x = self.model.Mixed_5d(x)
+                    x = self.model.Mixed_6a(x)
+                    x = self.model.Mixed_6b(x)
+                    x = self.model.Mixed_6c(x)
+                    x = self.model.Mixed_6d(x)
+                    x = self.model.Mixed_6e(x)
+                    x = self.model.Mixed_7a(x)
+                    x = self.model.Mixed_7b(x)
+                    x = self.model.Mixed_7c(x)
+                    # Global average pooling
+                    x = self.model.avgpool(x)
+                    # Flatten to get feature vector
+                    x = torch.flatten(x, 1)
+                    return x
+            
+            model = InceptionFeatureExtractor(model)
         
         elif self.model_name == "densenet121":
             model = models.densenet121(weights=models.DenseNet121_Weights.IMAGENET1K_V1)

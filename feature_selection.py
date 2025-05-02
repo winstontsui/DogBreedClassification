@@ -80,8 +80,8 @@ class FeatureSelector:
     
     def apply_gwo(self, features, labels):
         """
-        Apply a simplified feature selection approach for faster execution.
-        Instead of full GWO, we use a faster approach based on feature importance.
+        Apply a very fast feature selection method using multiple statistical measures.
+        This approach combines different feature importance metrics for better selection.
         
         Args:
             features (numpy.ndarray): Input features.
@@ -90,19 +90,62 @@ class FeatureSelector:
         Returns:
             tuple: (selected_features, selected_indices)
         """
-        print("Applying simplified feature selection for faster execution...")
+        print("Applying fast multi-metric feature selection...")
         
-        # Train a simple SVM to get feature importance
-        from sklearn.svm import SVC
-        from sklearn.feature_selection import SelectKBest, f_classif
+        # Use multiple feature selection methods for robustness
+        from sklearn.feature_selection import mutual_info_classif, f_classif, chi2
+        from sklearn.ensemble import ExtraTreesClassifier
         
-        # Use ANOVA F-value for feature selection
-        print(f"Selecting top {config.SELECTED_FEATURES} features using F-test...")
-        selector = SelectKBest(f_classif, k=config.SELECTED_FEATURES)
-        selector.fit(features, labels)
+        print("Calculating feature importance using multiple metrics...")
         
-        # Get the selected indices
-        selected_indices = np.argsort(selector.scores_)[-config.SELECTED_FEATURES:]
+        # 1. F-test (ANOVA)
+        f_scores, _ = f_classif(features, labels)
+        f_indices = np.argsort(f_scores)[-config.SELECTED_FEATURES:]
+        
+        # 2. Mutual Information
+        mi_scores = mutual_info_classif(features, labels, random_state=config.RANDOM_SEED)
+        mi_indices = np.argsort(mi_scores)[-config.SELECTED_FEATURES:]
+        
+        # 3. Extra Trees feature importance (fast ensemble method)
+        print("Training a fast ensemble model for feature importance...")
+        et_model = ExtraTreesClassifier(
+            n_estimators=50,  # Use fewer trees for speed
+            max_depth=10,
+            random_state=config.RANDOM_SEED,
+            n_jobs=-1  # Use all CPU cores
+        )
+        # Use a sample of the data for faster training
+        sample_size = min(5000, features.shape[0])
+        indices = np.random.choice(features.shape[0], sample_size, replace=False)
+        et_model.fit(features[indices], labels[indices])
+        et_scores = et_model.feature_importances_
+        et_indices = np.argsort(et_scores)[-config.SELECTED_FEATURES:]
+        
+        # Combine the selected indices from all methods
+        print("Combining results from multiple selection methods...")
+        all_indices = np.unique(np.concatenate([f_indices, mi_indices, et_indices]))
+        
+        # If we have more than the desired number of features, select the top ones
+        # by averaging the normalized ranks from each method
+        if len(all_indices) > config.SELECTED_FEATURES:
+            # Normalize each score
+            f_norm = (f_scores - np.min(f_scores)) / (np.max(f_scores) - np.min(f_scores) + 1e-10)
+            mi_norm = (mi_scores - np.min(mi_scores)) / (np.max(mi_scores) - np.min(mi_scores) + 1e-10)
+            et_norm = (et_scores - np.min(et_scores)) / (np.max(et_scores) - np.min(et_scores) + 1e-10)
+            
+            # Create a combined score with different weights
+            combined_scores = 0.4 * f_norm + 0.3 * mi_norm + 0.3 * et_norm
+            
+            # Select the top features based on the combined score
+            selected_indices = np.argsort(combined_scores)[-config.SELECTED_FEATURES:]
+        else:
+            # If we have fewer than needed, use all and add more from f_scores
+            additional_needed = config.SELECTED_FEATURES - len(all_indices)
+            remaining_indices = np.setdiff1d(np.arange(features.shape[1]), all_indices)
+            additional_indices = np.argsort(f_scores[remaining_indices])[-additional_needed:]
+            selected_indices = np.concatenate([all_indices, remaining_indices[additional_indices]])
+        
+        # Extract the selected features
         selected_features = features[:, selected_indices]
         
         print(f"Selected {len(selected_indices)} features")

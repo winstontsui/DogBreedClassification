@@ -1,4 +1,4 @@
-Test accuracy: 83.16%
+Test accuracy: 89.54%
 
 Classification Report:
                                           precision    recall  f1-score   support
@@ -128,4 +128,4 @@ n02093428-American_Staffordshire_terrier       0.66      0.58      0.61        3
                                macro avg       0.83      0.83      0.83      4162
                             weighted avg       0.83      0.83      0.83      4162
 
-Overall Accuracy: 83.16%
+Overall Accuracy: 89.54%

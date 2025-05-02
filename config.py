@@ -15,7 +15,7 @@ IMAGE_SIZE = 224  # Standard input size for most CNN models
 
 # Dataset sampling for faster processing
 MAX_SAMPLES_PER_CLASS = 50  # Limit samples per class for faster processing
-USE_SAMPLE_LIMIT = True  # Set to False to use full dataset
+USE_SAMPLE_LIMIT = False  # Set to False to use full dataset
 
 # Feature extraction parameters
 BATCH_SIZE = 64  # Increased batch size for faster processing
@@ -26,20 +26,20 @@ FEATURE_DIR = "./features"
 # Comment out models to use fewer for faster processing
 MODELS = [
     "resnet50",  # Fastest model
-    # "vgg16",     # Uncomment to use more models (slower)
-    # "inception_v3",
-    # "densenet121",
+    "vgg16",     # Uncomment to use more models (slower)
+    "inception_v3",
+    "densenet121",
 ]
 
 # Feature selection parameters
-PCA_COMPONENTS = 256  # Reduced number of components to keep after PCA
-GWO_POPULATION = 5    # Reduced population size for GWO
-GWO_ITERATIONS = 10   # Reduced number of iterations for GWO
-SELECTED_FEATURES = 128  # Reduced number of features to select after GWO
+PCA_COMPONENTS = 512  # Increased number of components to keep after PCA
+GWO_POPULATION = 10   # Increased population size for GWO
+GWO_ITERATIONS = 20   # Increased number of iterations for GWO
+SELECTED_FEATURES = 256  # Increased number of features to select after GWO
 
 # SVM parameters
-SVM_C = 10.0  # Regularization parameter
-SVM_KERNEL = 'rbf'  # Kernel type
+SVM_C = 100.0  # Increased regularization parameter for better fit
+SVM_KERNEL = 'rbf'  # Kernel type (radial basis function works well for image features)
 SVM_GAMMA = 'scale'  # Kernel coefficient
 
 # Training parameters
